@@ -1,0 +1,86 @@
+body {
+    color: #000000;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    color: #606060;
+}
+
+a {
+   color: #2d17ed;
+}
+
+a:hover {
+    color: #d6ed17i
+}
+
+ul {
+    margin-left: 3rem;
+}
+
+#header {
+    color: #dddddd; 
+    background-color: #606060;
+    padding: 1rem;
+    border-bottom: 1px solid #303030;
+    margin-bottom: 3rem;
+    line-height: 2.5rem;
+}
+
+#header .title {
+    color: #d6ed17;
+    font-weight: bold;
+    font-size: 2.5rem;
+    letter-spacing: .2rem;
+}
+
+#header a.title {
+    color: #d6ed17;
+    text-decoration: inherit;
+}
+
+#header a.title:hover {
+    text-decoration: none;
+}
+
+#header .menu a {
+    color: inherit;
+    text-decoration: none;
+    padding: 0.5rem;
+} 
+
+#header a:hover {
+    color: #d6ed17;
+    text-decoration: underline;
+}
+
+#header .social {
+    letter-spacing: .5rem;
+    padding-left: 1rem;
+}
+
+#header .social a {
+    color: inherit;
+}
+
+#header .social a:hover {
+    color: #d6ed17;
+}
+
+#footer {
+    margin: auto;
+    color: darkgray;
+}
+
+.post-title {
+    color: #909090;
+    margin-bottom: 2rem;
+}
+
+.post-title a {
+    color: #606060;
+}
+
+.post-title h1 {
+    margin-bottom: 0;
+}
