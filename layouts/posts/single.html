@@ -1,0 +1,21 @@
+{{ define "main" }}
+<div id="fb-root"></div>
+<script async defer crossorigin="anonymous" src="https://connect.facebook.net/en_US/sdk.js#xfbml=1&version=v6.0&appId=1347023912068374&autoLogAppEvents=1"></script>
+
+<div class="post-title">
+<h1>{{ .Title }}</h1>
+posted on <a href="{{ .RelPermalink }}">{{ .PublishDate.Format "2006.01.02" }}</a>
+{{ with .Params.tags }}
+  in <i data-feather="tag"></i>
+  {{ range . }}
+  {{ $href := print (absURL "tags/") (urlize .) }}
+  <a class="btn btn-sm btn-outline-dark tag-btn" href="{{ $href }}">{{ . }}</a>
+  {{ end }}
+{{ end }}
+</div>
+
+{{ .Content }}
+
+<div id="comments" data-href="{{ .Permalink }}" class="fb-comments" data-numposts="50" data-width="100%"w ></div>
+
+{{ end }}
