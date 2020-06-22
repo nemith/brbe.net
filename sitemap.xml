@@ -3,15 +3,32 @@
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   
   <url>
-    <loc>https://brbe.net/about/</loc>
+    <loc>https://brbe.net/posts/experiments-with-go-generics/</loc>
+    <lastmod>2020-06-21T00:00:00+00:00</lastmod>
   </url>
   
   <url>
     <loc>https://brbe.net/</loc>
+    <lastmod>2020-06-21T00:00:00+00:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://brbe.net/tags/golang/</loc>
+    <lastmod>2020-06-21T00:00:00+00:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://brbe.net/posts/</loc>
+    <lastmod>2020-06-21T00:00:00+00:00</lastmod>
   </url>
   
   <url>
     <loc>https://brbe.net/tags/</loc>
+    <lastmod>2020-06-21T00:00:00+00:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://brbe.net/about/</loc>
   </url>
   
 </urlset>

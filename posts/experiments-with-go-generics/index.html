@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html><head>
+    <meta charset="utf-8">
+    <title>(Bad?) Experiments with Go generics</title>
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="//fonts.googleapis.com/css?family=Raleway:400,300,600" rel="stylesheet" type="text/css">
+    <link rel="stylesheet" href="//cdn.iconmonstr.com/1.3.0/css/iconmonstr-iconic-font.min.css">
+    <link rel="stylesheet" href="https://brbe.net/css/normalize.css">
+    <link rel="stylesheet" href="https://brbe.net/css/skeleton.css">
+    <link rel="stylesheet" href="https://brbe.net/css/site.css">
+    <link rel="icon" type="image/png" href="https://brbe.net/images/favicon.png">
+</head><body><div id="header">
+    <div class="container">
+        <a class="title" href="/">brbe</a>
+        <span class="u-pull-right">
+            <span class="menu">
+                <a href="/about">about</a>
+                <a href="/posts">posts</a>
+            </span>
+        <span class="social">
+            <a href="https://www.facebook.com/brandon.robert.bennett/"><i class="im im-facebook"></i></a>
+            <a href="https://www.instagram.com/nemith/"><i class="im im-instagram"></i></a>
+            <a href="https://www.linkedin.com/in/brandonrbennett/"><i class="im im-linkedin"></i></a>
+            <a href="https://twitter.com/brandonrbennett/"><i class="im im-twitter"></i></a>
+            <a href="https://github.com/nemith"><i class="im im-github"></i></a>
+        </span>
+        </span>
+    </div>
+</div>
+<div id="fb-root"></div>
+<script async defer crossorigin="anonymous" src="https://connect.facebook.net/en_US/sdk.js#xfbml=1&version=v6.0&appId=1347023912068374&autoLogAppEvents=1"></script>
+
+<div id="content" class="container">
+<div class="post-title">
+<h1>(Bad?) Experiments with Go generics</h1>
+posted on <a href="/posts/experiments-with-go-generics/">2020.06.21</a>
+
+  in <i data-feather="tag"></i>
+  
+  
+  <a class="btn btn-sm btn-outline-dark tag-btn" href="https://brbe.net/tags/golang">golang</a>
+  
+
+</div>
+
+<p>The Go team just posted about <em><a href="https://blog.golang.org/generics-next-step">The Next Step for Generics</a></em> whiches shows the current progess for Generics in go which includes an updated draft which removed contracts completely and replaces them just with interfaces a long with a lot of different examples.</p>
+<p>In addition the go team created a translation tool that will take the experimental generic code and convert it to concreate types via monophorphization so that you can play with and experiment with the feature.  This tool has also been exposed at <a href="https://go2goplay.golang.org">go2goplay.golang.org</a> making it really easy to play around with the new syntax.</p>
+<p>So I starting thinking of ways generics could be used mostly based off of what is found in other langages and I implemented a few of them here.  Please note that these are probably <strong>horrible ideas</strong> and probably shouldn&rsquo;t be taken as what <em>should</em> be done.</p>
+<h2 id="rust-style-result-object">Rust-style <code>Result</code> object</h2>
+<p>With Go you can return multiple values from a function and errors must be passed between functions as one of those values (typically the last one) as there are no exceptions that bubble up behind the scenes.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">doThing</span>(<span style="color:#a6e22e">fail</span> <span style="color:#66d9ef">bool</span>) (<span style="color:#66d9ef">int</span>, <span style="color:#66d9ef">error</span>) {
+    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">fail</span> {
+        <span style="color:#75715e">// we explitly return the error here
+</span><span style="color:#75715e"></span>        <span style="color:#66d9ef">return</span> <span style="color:#ae81ff">0</span>, <span style="color:#a6e22e">errors</span>.<span style="color:#a6e22e">New</span>(<span style="color:#e6db74">&#34;failed to do thing&#34;</span>)
+    }
+    <span style="color:#66d9ef">return</span> <span style="color:#ae81ff">42</span>, <span style="color:#ae81ff">0</span>
+}
+
+<span style="color:#66d9ef">func</span> <span style="color:#a6e22e">main</span>() {
+    <span style="color:#a6e22e">x</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">doThing</span>(<span style="color:#66d9ef">true</span>)
+    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+        panic(<span style="color:#a6e22e">err</span>)
+    }
+    <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Println</span>(<span style="color:#a6e22e">x</span>)
+}
+</code></pre></div><p>Rust is similar in making errors explit return values, however instead of returning multiple errors an <a href="https://doc.rust-lang.org/rust-by-example/custom_types/enum.html"><code>enum</code></a> called <a href="https://doc.rust-lang.org/std/result/index.html"><code>Result</code></a> with generic type parameters is passed back with a value of either a <code>Ok</code> value or and <code>Err</code> value (never both!). Both <code>Ok</code> and <code>Err</code> can have any type.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#75715e">// Define both the Ok type and the Err type.  For simplicty i am returning a
+</span><span style="color:#75715e">// static string slice
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">do_thing</span>(fail: <span style="color:#66d9ef">bool</span>) Result<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">i32</span>, <span style="color:#f92672">&amp;</span>&#39;static <span style="color:#66d9ef">str</span><span style="color:#f92672">&gt;</span> {
+    <span style="color:#66d9ef">if</span> fail {
+        <span style="color:#66d9ef">return</span> Err(<span style="color:#e6db74">&#34;failed to do thing&#34;</span>)
+    }
+    <span style="color:#66d9ef">return</span> Ok(<span style="color:#ae81ff">42</span>)
+}
+
+<span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">main</span>() {
+    <span style="color:#75715e">// unwrap gets the Result value for Ok or panics if Result is an Err
+</span><span style="color:#75715e"></span>    println<span style="color:#f92672">!</span>(do_thing.unwrap())
+}
+</code></pre></div><p>In this case <code>unwrap</code> will panic if the result enum is the Err value, but there are other ways of checking the error from Rust.</p>
+<p>Although Go doesn&rsquo;t not support a <code>enum</code> type we can use a type paramaterized struct which can contain the return type and/or an <code>error</code> value.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#75715e">// Result can hold _both_ a Err and Result but only one is used.
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Result</span>(<span style="color:#66d9ef">type</span> <span style="color:#a6e22e">T</span>) <span style="color:#66d9ef">struct</span> {
+	<span style="color:#a6e22e">Err</span>   <span style="color:#66d9ef">error</span>
+	<span style="color:#a6e22e">Value</span> <span style="color:#a6e22e">T</span>
+}
+
+<span style="color:#75715e">// Ok will create a new result with a value of any type and no error.
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">Ok</span>(<span style="color:#66d9ef">type</span> <span style="color:#a6e22e">T</span>)(<span style="color:#a6e22e">value</span> <span style="color:#a6e22e">T</span>) <span style="color:#a6e22e">Result</span>(<span style="color:#a6e22e">T</span>) {
+	<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">Result</span>(<span style="color:#a6e22e">T</span>){ <span style="color:#a6e22e">Value</span>: <span style="color:#a6e22e">value</span> }
+}	
+    
+<span style="color:#75715e">// Err will create a new result with only an error
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">Err</span>(<span style="color:#66d9ef">type</span> <span style="color:#a6e22e">T</span>)(<span style="color:#a6e22e">err</span> <span style="color:#66d9ef">error</span>) <span style="color:#a6e22e">Result</span>(<span style="color:#a6e22e">T</span>) {
+	<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">Result</span>(<span style="color:#a6e22e">T</span>){ <span style="color:#a6e22e">Err</span>: <span style="color:#a6e22e">err</span> }
+}
+
+<span style="color:#75715e">// Expect will panic if there is an error, else it returns the underlying
+</span><span style="color:#75715e">// type.
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">r</span> <span style="color:#a6e22e">Result</span>(<span style="color:#a6e22e">T</span>)) <span style="color:#a6e22e">Expect</span>(<span style="color:#a6e22e">msg</span> <span style="color:#66d9ef">string</span>) <span style="color:#a6e22e">T</span> {
+	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">Err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+		panic(<span style="color:#a6e22e">msg</span>)
+	}
+	<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">Value</span>
+}
+
+<span style="color:#75715e">// Unwrap will just return the value and ingore the error.  This is unlike
+</span><span style="color:#75715e">// rust which will panic here.  If there is an error the zero value for T
+</span><span style="color:#75715e">// is returned instead.
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">r</span> <span style="color:#a6e22e">Result</span>(<span style="color:#a6e22e">T</span>)) <span style="color:#a6e22e">Unwrap</span>() <span style="color:#a6e22e">T</span> {
+	<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">Value</span>
+}
+
+<span style="color:#75715e">// IsOk returns true if there is no error
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">r</span> <span style="color:#a6e22e">Result</span>(<span style="color:#a6e22e">T</span>)) <span style="color:#a6e22e">IsOk</span>() <span style="color:#66d9ef">bool</span> {
+	<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">Err</span> <span style="color:#f92672">==</span> <span style="color:#66d9ef">nil</span> 
+}
+
+<span style="color:#75715e">// IsErr returns true if there is an error
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">r</span> <span style="color:#a6e22e">Result</span>(<span style="color:#a6e22e">T</span>)) <span style="color:#a6e22e">IsErr</span>() <span style="color:#66d9ef">bool</span> {
+	<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">Err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> 
+}
+
+<span style="color:#75715e">// ErrIs is a wrapper for errors.Is
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">r</span> <span style="color:#a6e22e">Result</span>(<span style="color:#a6e22e">T</span>)) <span style="color:#a6e22e">ErrIs</span>(<span style="color:#a6e22e">target</span> <span style="color:#66d9ef">error</span>) <span style="color:#66d9ef">bool</span> {
+	<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">errors</span>.<span style="color:#a6e22e">Is</span>(<span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">Err</span>, <span style="color:#a6e22e">target</span>)
+}
+
+<span style="color:#75715e">// ErrAs is a wrapper for errors.As
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">r</span> <span style="color:#a6e22e">Result</span>(<span style="color:#a6e22e">T</span>)) <span style="color:#a6e22e">ErrAs</span>(<span style="color:#a6e22e">target</span> <span style="color:#66d9ef">interface</span>{}) <span style="color:#66d9ef">bool</span> {
+	<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">errors</span>.<span style="color:#a6e22e">As</span>(<span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">Err</span>, <span style="color:#a6e22e">target</span>)
+}
+
+<span style="color:#66d9ef">var</span> <span style="color:#a6e22e">ErrBadValue</span> = <span style="color:#a6e22e">errors</span>.<span style="color:#a6e22e">New</span>(<span style="color:#e6db74">&#34;bad value&#34;</span>)
+
+<span style="color:#66d9ef">func</span> <span style="color:#a6e22e">myFunc</span>(<span style="color:#a6e22e">input</span> <span style="color:#66d9ef">string</span>) <span style="color:#a6e22e">Result</span>(<span style="color:#66d9ef">int</span>) {
+	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">input</span> <span style="color:#f92672">==</span> <span style="color:#e6db74">&#34;bad&#34;</span> {
+        <span style="color:#75715e">// note we have to explitly state the return type here as Go cannot 
+</span><span style="color:#75715e"></span>        <span style="color:#75715e">// (yet) infer the type from the return type.
+</span><span style="color:#75715e"></span>		<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">Err</span>(<span style="color:#66d9ef">int</span>)(<span style="color:#a6e22e">ErrBadValue</span>)
+	}
+
+    <span style="color:#75715e">// type inference works ok here as we are passing an int.
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">Ok</span>(<span style="color:#ae81ff">42</span>)
+}
+
+<span style="color:#66d9ef">func</span> <span style="color:#a6e22e">main</span>() {
+    <span style="color:#75715e">// panic if there is an error
+</span><span style="color:#75715e"></span>	<span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Println</span>(<span style="color:#a6e22e">myFunc</span>(<span style="color:#e6db74">&#34;good&#34;</span>).<span style="color:#a6e22e">Expect</span>(<span style="color:#e6db74">&#34;value is bad&#34;</span>))
+<span style="color:#75715e">//	fmt.Println(myFunc(&#34;bad&#34;).Expect(&#34;value is bad&#34;))
+</span><span style="color:#75715e"></span>	
+	<span style="color:#a6e22e">res</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">myFunc</span>(<span style="color:#e6db74">&#34;wut&#34;</span>)
+    <span style="color:#75715e">// replacement for if err != nil
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">res</span>.<span style="color:#a6e22e">IsErr</span>() {
+		panic(<span style="color:#e6db74">&#34;we had any error&#34;</span>)
+	}
+	
+	<span style="color:#a6e22e">res</span> = <span style="color:#a6e22e">myFunc</span>(<span style="color:#e6db74">&#34;hmm&#34;</span>)
+	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">res</span>.<span style="color:#a6e22e">ErrIs</span>(<span style="color:#a6e22e">ErrBadValue</span>) {
+		panic(<span style="color:#e6db74">&#34;we got a bad value&#34;</span>)		
+	}
+	
+	<span style="color:#a6e22e">res</span> = <span style="color:#a6e22e">myFunc</span>(<span style="color:#e6db74">&#34;bad&#34;</span>)
+    <span style="color:#75715e">// ignore the error
+</span><span style="color:#75715e"></span>    <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Println</span>(<span style="color:#a6e22e">res</span>.<span style="color:#a6e22e">Unwrap</span>())
+}
+</code></pre></div><p>So with generic Go we can create a <code>Result</code> like object, but besides having a way to panic on error with  <code>Expect</code> we actually don&rsquo;t gain much as there still ins&rsquo;t a way to easily return an Result error back up to the higher called in the stack (like <code>?</code> in Rust).</p>
+<p>So this probably isn&rsquo;t the best idea, but it is possible.</p>
+<p><a href="https://go2goplay.golang.org/p/_UYH9bIKSGu">Play with this in the go2go playground</a></p>
+<h2 id="optional-objects">Optional objects</h2>
+<p>Go only supports <code>nil</code> on certain values (maps, slices, channels, interfaces, and pointers) which can be used to denote the &ldquo;lack of value&rdquo;.  Other types like <code>int</code> or <code>string</code> cannot be null and instead are instantiated as their <em>default</em> or <em>zero</em> value.  Like <code>0</code> for <code>int</code> and <code>&quot;&quot;</code> (empty string) for <code>string</code>.</p>
+<p>Often times the zero value can be used to see if a value is set or not (i.e: <code>if myString == &quot;&quot;</code>) however
+there are times where the zero value is valid but you still also want to check the existence for a value as well.</p>
+<p>There are really two way in Go to handle this situation.  One way is to create a pointer to the value.  Since pointers are <em>nillable</em> you can check the value for nil.  The downside is if you forget to check for nil you will panic at runtime.  The other way is to wrap the value in a struct with a bool to denote it exists or not</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#75715e">// using a pointer to the value
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Foo</span> <span style="color:#66d9ef">struct</span> {
+    <span style="color:#a6e22e">quuz</span> <span style="color:#f92672">*</span><span style="color:#66d9ef">int</span>
+}
+
+<span style="color:#66d9ef">func</span> <span style="color:#a6e22e">doThingFoo</span>(<span style="color:#a6e22e">foo</span> <span style="color:#a6e22e">Foo</span>) {
+    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">foo</span>.<span style="color:#a6e22e">quuz</span> <span style="color:#f92672">==</span> <span style="color:#66d9ef">nil</span> {
+        <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Println</span>(<span style="color:#e6db74">&#34;value not set&#34;</span>)
+        <span style="color:#66d9ef">return</span> 
+    }
+    <span style="color:#75715e">// Note we have to deference the value back to an int here for functions
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// that expect int and not *int. Also will panic if we forgot to nill check
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// first
+</span><span style="color:#75715e"></span>    <span style="color:#a6e22e">doThingWithValue</span>(<span style="color:#f92672">*</span><span style="color:#a6e22e">foo</span>.<span style="color:#a6e22e">quuz</span>)
+}
+
+<span style="color:#75715e">// We need a object to hold the value and it&#39;s current state
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">OptionalInt</span> <span style="color:#66d9ef">struct</span> {
+    <span style="color:#a6e22e">Value</span> <span style="color:#66d9ef">int</span>
+    <span style="color:#a6e22e">Valid</span> <span style="color:#66d9ef">bool</span>
+}
+
+<span style="color:#66d9ef">func</span> <span style="color:#a6e22e">Bar</span> <span style="color:#66d9ef">struct</span> {
+    <span style="color:#a6e22e">quux</span> <span style="color:#a6e22e">OptionalInt</span>
+}
+
+<span style="color:#66d9ef">func</span> <span style="color:#a6e22e">doThingBar</span>(<span style="color:#a6e22e">bar</span> <span style="color:#a6e22e">Bar</span>) {
+    <span style="color:#66d9ef">if</span> !<span style="color:#a6e22e">foo</span>.<span style="color:#a6e22e">quux</span>.<span style="color:#a6e22e">Valid</span> {
+        <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Println</span>(<span style="color:#e6db74">&#34;value not set&#34;</span>)
+        <span style="color:#66d9ef">return</span> 
+    }
+    <span style="color:#75715e">// Here we can get the Value directly from the struct.  We have no chance
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// of panicing here as even with quux being invalid this will still be the
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// zero value or `0` as it is an int.
+</span><span style="color:#75715e"></span>    <span style="color:#a6e22e">doThingWithValue</span>(<span style="color:#a6e22e">foo</span>.<span style="color:#a6e22e">quux</span>.<span style="color:#a6e22e">Value</span>)
+}
+</code></pre></div><p>You can find examples of both in the standard library.  <code>database/sql</code> has functions for <code>NullBool</code>, <code>NullFloat64</code>, <code>NullInt32</code>, <code>NillInt64</code>, <code>NullString</code>, and (recently) <code>NullTime</code>.  The <code>flag</code> package on the other hand has functions that either take in a pointer (i.e <code>BoolVar</code>, <code>DurationVar</code>, <code>Float64</code>, <code>Int64</code> etc ) or return a pointer (<code>Bool</code>, <code>Duration</code>, <code>Float</code>, <code>Int</code>).</p>
+<p>In both cases you can see a lot of repitition and that functions and types are replicated for all the basic types.   This sounds exactly what generics in Go are for!</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-golang" data-lang="golang"><span style="color:#f92672">package</span> <span style="color:#a6e22e">main</span>
+
+<span style="color:#f92672">import</span> (
+	<span style="color:#e6db74">&#34;fmt&#34;</span>
+)
+
+<span style="color:#75715e">// Optional type can be valid or not and store the value
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Optional</span>(<span style="color:#66d9ef">type</span> <span style="color:#a6e22e">T</span>) <span style="color:#66d9ef">struct</span> {
+	<span style="color:#a6e22e">valid</span> <span style="color:#66d9ef">bool</span>
+	<span style="color:#a6e22e">value</span> <span style="color:#a6e22e">T</span>
+}
+
+<span style="color:#75715e">// Empty returns a new Optional that is not valid
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">Empty</span>(<span style="color:#66d9ef">type</span> <span style="color:#a6e22e">T</span>)() <span style="color:#a6e22e">Optional</span>(<span style="color:#a6e22e">T</span>) {
+	<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">Optional</span>(<span style="color:#a6e22e">T</span>){}
+}
+
+<span style="color:#75715e">// New createa new option with the given value and is implictly valid
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">New</span>(<span style="color:#66d9ef">type</span> <span style="color:#a6e22e">T</span>)(<span style="color:#a6e22e">value</span> <span style="color:#a6e22e">T</span>) <span style="color:#a6e22e">Optional</span>(<span style="color:#a6e22e">T</span>) {
+	<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">Optional</span>(<span style="color:#a6e22e">T</span>){
+		<span style="color:#a6e22e">valid</span>: <span style="color:#66d9ef">true</span>,
+		<span style="color:#a6e22e">value</span>: <span style="color:#a6e22e">value</span>,
+	}
+}
+
+<span style="color:#75715e">// FromPtr will take a point and create a new valid Optional if it is not
+</span><span style="color:#75715e">// nil and will automatically dereference the value.
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">FromPtr</span>(<span style="color:#66d9ef">type</span> <span style="color:#a6e22e">T</span>)(<span style="color:#a6e22e">ptr</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">T</span>) <span style="color:#a6e22e">Optional</span>(<span style="color:#a6e22e">T</span>) {
+	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">ptr</span> <span style="color:#f92672">==</span> <span style="color:#66d9ef">nil</span> {
+		<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">Optional</span>(<span style="color:#a6e22e">T</span>){} <span style="color:#75715e">// valid is automatically false
+</span><span style="color:#75715e"></span>	}
+	<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">Optional</span>(<span style="color:#a6e22e">T</span>){
+		<span style="color:#a6e22e">value</span>: <span style="color:#f92672">*</span><span style="color:#a6e22e">ptr</span>,
+		<span style="color:#a6e22e">valid</span>: <span style="color:#66d9ef">true</span>,
+	}
+}
+
+<span style="color:#75715e">// Valid returns if the there is an optional.
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">o</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Optional</span>(<span style="color:#a6e22e">T</span>)) <span style="color:#a6e22e">Valid</span>() <span style="color:#66d9ef">bool</span> { <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">o</span>.<span style="color:#a6e22e">valid</span> }
+
+<span style="color:#75715e">// Get will return the value and and bool if it is valid or not.  This is 
+</span><span style="color:#75715e">// similar to getting a value from a map.
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">o</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Optional</span>(<span style="color:#a6e22e">T</span>)) <span style="color:#a6e22e">Get</span>() (<span style="color:#a6e22e">T</span>, <span style="color:#66d9ef">bool</span>) {
+	<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">o</span>.<span style="color:#a6e22e">value</span>, <span style="color:#a6e22e">o</span>.<span style="color:#a6e22e">valid</span>
+}
+
+<span style="color:#75715e">// Must will return the valid or panic if it doesn&#39;t exist
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">o</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Optional</span>(<span style="color:#a6e22e">T</span>)) <span style="color:#a6e22e">Must</span>() <span style="color:#a6e22e">T</span> {
+	<span style="color:#66d9ef">if</span> !<span style="color:#a6e22e">o</span>.<span style="color:#a6e22e">valid</span> {
+		panic(<span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Sprintf</span>(<span style="color:#e6db74">&#34;%T is not valid&#34;</span>, <span style="color:#a6e22e">o</span>.<span style="color:#a6e22e">value</span>))
+	}
+	<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">o</span>.<span style="color:#a6e22e">value</span>
+}
+
+<span style="color:#75715e">// OrZero will return a valid value or it&#39;s zero value
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">o</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Optional</span>(<span style="color:#a6e22e">T</span>)) <span style="color:#a6e22e">OrZero</span>() <span style="color:#a6e22e">T</span> {
+	<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">o</span>.<span style="color:#a6e22e">value</span>
+}
+
+<span style="color:#75715e">// OrElse will return a valid value or a different value
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">o</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Optional</span>(<span style="color:#a6e22e">T</span>)) <span style="color:#a6e22e">OrElse</span>(<span style="color:#a6e22e">other</span> <span style="color:#a6e22e">T</span>) <span style="color:#a6e22e">T</span> {
+	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">o</span>.<span style="color:#a6e22e">valid</span> {
+		<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">o</span>.<span style="color:#a6e22e">value</span>
+	}
+	<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">other</span>
+}
+
+<span style="color:#75715e">// Ptr will return a pointer to the value or nil if it is not valid.
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">o</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Optional</span>(<span style="color:#a6e22e">T</span>)) <span style="color:#a6e22e">Ptr</span>() <span style="color:#f92672">*</span><span style="color:#a6e22e">T</span> {
+	<span style="color:#66d9ef">if</span> !<span style="color:#a6e22e">o</span>.<span style="color:#a6e22e">valid</span> {
+		<span style="color:#66d9ef">return</span> <span style="color:#66d9ef">nil</span>
+	}
+	<span style="color:#66d9ef">return</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">o</span>.<span style="color:#a6e22e">value</span>
+}
+
+<span style="color:#75715e">// Ptr is a function to return a pointer to a value.  Also made generic :)
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">Ptr</span>(<span style="color:#66d9ef">type</span> <span style="color:#a6e22e">T</span>)(<span style="color:#a6e22e">val</span> <span style="color:#a6e22e">T</span>) <span style="color:#f92672">*</span><span style="color:#a6e22e">T</span> {
+	<span style="color:#66d9ef">return</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">val</span>
+}
+
+<span style="color:#66d9ef">func</span> <span style="color:#a6e22e">main</span>() {
+	<span style="color:#a6e22e">a</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">New</span>(<span style="color:#ae81ff">42</span>)
+	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">v</span>, <span style="color:#a6e22e">ok</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">a</span>.<span style="color:#a6e22e">Get</span>(); <span style="color:#a6e22e">ok</span> {
+		<span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;a is valid and set to: %v\n&#34;</span>, <span style="color:#a6e22e">v</span>)
+	}
+	
+	<span style="color:#75715e">// Create empty optional
+</span><span style="color:#75715e"></span>	<span style="color:#a6e22e">b</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">Empty</span>(<span style="color:#66d9ef">string</span>)()
+	<span style="color:#75715e">// print if b is valid if not return &#34;&lt;unknown&gt;&#34;
+</span><span style="color:#75715e"></span>	<span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Println</span>(<span style="color:#e6db74">&#34;b value:&#34;</span>, <span style="color:#a6e22e">b</span>.<span style="color:#a6e22e">OrElse</span>(<span style="color:#e6db74">&#34;&lt;unknown&gt;&#34;</span>))
+	
+
+	<span style="color:#75715e">// function call needed as you cannot take the address of a literal
+</span><span style="color:#75715e"></span>	<span style="color:#a6e22e">c</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">FromPtr</span>(<span style="color:#a6e22e">Ptr</span>(<span style="color:#ae81ff">42</span>)) 
+	<span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Println</span>(<span style="color:#e6db74">&#34;c valid:&#34;</span>, <span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">Valid</span>())
+	<span style="color:#a6e22e">cv</span>, <span style="color:#a6e22e">_</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">Get</span>()
+	<span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Println</span>(<span style="color:#e6db74">&#34;c value:&#34;</span>, <span style="color:#a6e22e">cv</span>) <span style="color:#75715e">// value already derefed	
+</span><span style="color:#75715e"></span>	
+	<span style="color:#75715e">// Create nil *int
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">var</span> <span style="color:#a6e22e">nilInt</span> <span style="color:#f92672">*</span><span style="color:#66d9ef">int</span>
+	<span style="color:#a6e22e">d</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">FromPtr</span>(<span style="color:#a6e22e">nilInt</span>)
+	<span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Println</span>(<span style="color:#e6db74">&#34;d valid:&#34;</span>, <span style="color:#a6e22e">d</span>.<span style="color:#a6e22e">Valid</span>())
+	<span style="color:#a6e22e">dv</span>, <span style="color:#a6e22e">_</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">d</span>.<span style="color:#a6e22e">Get</span>()
+	<span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Println</span>(<span style="color:#e6db74">&#34;d value:&#34;</span>, <span style="color:#a6e22e">dv</span>) <span style="color:#75715e">// value already derefed	
+</span><span style="color:#75715e"></span>}
+</code></pre></div><p>Unlike <code>Result</code> type playing around with an Optional wrapper seems like it could be useful in a post-generic world.  I am sure there is other functionality that could be added to a wrapper as well.</p>
+<p><a href="https://go2goplay.golang.org/p/P8REnlsuld4">Play with this in the go2go playground</a></p>
+<h2 id="summary">Summary</h2>
+<p>I did this examples as a though expirement with &ldquo;what could be done with generics&rdquo; and not so much &ldquo;what <em>should</em> be done&rdquo;.  There are a couple take aways I had with this.</p>
+<ol>
+<li>Working with generics is pretty straight forward and easy.  Writing seemed to be easy even with the extra params, however, reading may hurt a bit.</li>
+<li>There are a lot of questions about the future of Go in a post generic world.  What code will be idomatic and what won&rsquo;t be?  What is ok to have a feature-rich wrapper around, what won&rsquo;t be?  I cannot say for certain but experimentation will be key!</li>
+</ol>
+<p>What else can be done with the generic code in Go?  What do you use in other languages you wish you could with Go that could be enabled by paramaterized types?</p>
+
+
+<div id="comments" data-href="https://brbe.net/posts/experiments-with-go-generics/" class="fb-comments" data-numposts="50" data-width="100%"w ></div>
+</div>
+
+<div id="footer" class="container">
+    Copyright 2020 Brandon Bennett. All rights reserved.  
+</div></body>
+</html>

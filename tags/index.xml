@@ -6,9 +6,19 @@
     <description>Recent content in Tags on BrBe</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
+    <lastBuildDate>Sun, 21 Jun 2020 00:00:00 +0000</lastBuildDate>
     
 	<atom:link href="https://brbe.net/tags/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>golang</title>
+      <link>https://brbe.net/tags/golang/</link>
+      <pubDate>Sun, 21 Jun 2020 00:00:00 +0000</pubDate>
+      
+      <guid>https://brbe.net/tags/golang/</guid>
+      <description></description>
+    </item>
     
   </channel>
 </rss>

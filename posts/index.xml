@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>BrBe</title>
-    <link>https://brbe.net/</link>
-    <description>Recent content on BrBe</description>
+    <title>Posts on BrBe</title>
+    <link>https://brbe.net/posts/</link>
+    <description>Recent content in Posts on BrBe</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     <lastBuildDate>Sun, 21 Jun 2020 00:00:00 +0000</lastBuildDate>
     
-	<atom:link href="https://brbe.net/index.xml" rel="self" type="application/rss+xml" />
+	<atom:link href="https://brbe.net/posts/index.xml" rel="self" type="application/rss+xml" />
     
     
     <item>
@@ -19,18 +19,6 @@
       <guid>https://brbe.net/posts/experiments-with-go-generics/</guid>
       <description>The Go team just posted about The Next Step for Generics whiches shows the current progess for Generics in go which includes an updated draft which removed contracts completely and replaces them just with interfaces a long with a lot of different examples.
 In addition the go team created a translation tool that will take the experimental generic code and convert it to concreate types via monophorphization so that you can play with and experiment with the feature.</description>
-    </item>
-    
-    <item>
-      <title>Brandon Bennett</title>
-      <link>https://brbe.net/about/</link>
-      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
-      
-      <guid>https://brbe.net/about/</guid>
-      <description> I am a Network Engineering Manager at Facebook focusing on building network automation and network tooling.
-I am a huge fan of Go programming language and have tried to promote it has much as possible both personally and professionally.
-I am a german car fan. I enjoy tinkering with electronics, 3dprinting, and home automation.
-Contact   Email: me@brbe.net  Linkedin: brandonrbennett  Facebook: brandonr.robert.bennett  Instagram: nemith  Twitter: @brandonrbennett  Github: nemith  </description>
     </item>
     
   </channel>
