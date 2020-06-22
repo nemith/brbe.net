@@ -1,3 +1,33 @@
 {{ define "main" }}
-  <p>{{ .Site.Params.homeText | markdownify }}</p>
+
+<div id="content" class="container">
+{{ range where .Site.RegularPages "Type" "posts"}}
+    <article>
+      <!-- this <div> includes the title summary -->
+      <div>
+<div class="post-title">
+        <h1><a href="{{ .RelPermalink }}">{{ .Title }}</a></h1>
+posted on <a href="{{ .RelPermalink }}">{{ .PublishDate.Format "2006.01.02" }}</a>
+{{ with .Params.tags }}
+  in <i data-feather="tag"></i>
+  {{ range . }}
+  {{ $href := print (absURL "tags/") (urlize .) }}
+  <a class="btn btn-sm btn-outline-dark tag-btn" href="{{ $href }}">{{ . }}</a>
+  {{ end }}
+{{ end }}
+</div>
+        {{ .Summary }}
+      </div>
+      {{ if .Truncated }}
+      <!-- This <div> includes a read more link, but only if the summary is truncated... -->
+      <div>
+        <a href="{{ .RelPermalink }}">Read More…</a>
+      </div>
+      {{ end }}
+    </article>
+{{ end }}
+{{ template "_internal/pagination.html" . }}
+</div>
+
+
 {{ end }}

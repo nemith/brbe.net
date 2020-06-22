@@ -1,6 +1,7 @@
-baseURL = "http://brbe.net/"
+baseURL = "https://brbe.net/"
 languageCode = "en-us"
 title = "BrBe"
+
 
 [taxonomies]
     tag = "tags"

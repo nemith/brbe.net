@@ -54,6 +54,12 @@ ul {
     text-decoration: underline;
 }
 
+@media (max-width: 550px) {                  
+   #header .social {
+      display: none;
+   }
+}
+
 #header .social {
     letter-spacing: .5rem;
     padding-left: 1rem;
@@ -68,6 +74,7 @@ ul {
 }
 
 #footer {
+    padding-top: 3rem;
     margin: auto;
     color: darkgray;
 }
@@ -81,6 +88,30 @@ ul {
     color: #606060;
 }
 
+.post-title h1 a {
+    margin-bottom: 0;
+    text-decoration: none;
+}
+
 .post-title h1 {
     margin-bottom: 0;
+}
+
+code {
+    background: inherit;
+    border: inherit;
+}
+
+pre {
+      border-radius: 5px;
+}
+
+ol {
+    list-style: numeric inside
+}
+
+.hero {
+    background-image: url('../img/hero.png');
+    height: 50rem;
+    margin-top: 3rem;
 }
