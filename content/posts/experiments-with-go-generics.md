@@ -2,7 +2,6 @@
 title: "(Bad?) Experiments with Go generics"
 date: 2020-06-21
 tags: ["golang"]
-draft: true
 ---
 
 The Go team just posted about *[The Next Step for Generics](https://blog.golang.org/generics-next-step)* whiches shows the current progess for Generics in go which includes an updated draft which removed contracts completely and replaces them just with interfaces a long with a lot of different examples.  
