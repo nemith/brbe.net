@@ -13,9 +13,7 @@ I am a [german](https://bmw.com) [car](https://porsche.com) fan.  I enjoy tinker
 
 
 ## Contact
-  * {{<icon mail>}} **Email**: [me@brbe.net](mailto:me@brbe.net)
-  * {{<icon linkedin>}} **Linkedin**: [brandonrbennett](https://www.linkedin.com/in/brandonrbennett/)
-  * {{<icon facebook>}} **Facebook**: [brandonr.robert.bennett](https://www.facebook.com/brandon.robert.bennett/)
-  * {{<icon instagram>}} **Instagram**: [nemith](https://instagram.com/nemith)
-  * {{<icon twitter>}} **Twitter**: [@brandonrbennett](https://twitter.com/brandonrbennett)
+  * {{<icon mail>}} **Email**: [brandon@brbe.net](mailto:brandon@brbe.net)
+  * {{<icon mastodon>}} **Mastodon**: [nemith@hachyderm.io](https://hachyderm.io/@nemith)
   * {{<icon github>}} **Github**: [nemith](https://github.com/nemith)
+  * {{<icon linkedin>}} **Linkedin**: [brandonrbennett](https://www.linkedin.com/in/brandonrbennett/)

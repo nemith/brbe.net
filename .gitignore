@@ -1,1 +1,7 @@
+# hugo
 public
+site.tar.gz
+.hugo_build.lock
+
+#os x garbage
+.DS_Store

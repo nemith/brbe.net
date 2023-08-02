@@ -1,17 +1,17 @@
 ---
 title: "(Bad?) Experiments with Go generics"
 date: 2020-06-21
-tags: ["golang"]
+tags: ["golang", "generics"]
 ---
 
-The Go team just posted about *[The Next Step for Generics](https://blog.golang.org/generics-next-step)* whiches shows the current progess for Generics in go which includes an updated draft which removed contracts completely and replaces them just with interfaces a long with a lot of different examples.  
+The Go team just posted about *[The Next Step for Generics](https://blog.golang.org/generics-next-step)* whiches shows the current progess for Generics in go which includes an updated draft which removed contracts completely and replaces them just with interfaces a long with a lot of different examples.
 
 In addition the go team created a translation tool that will take the experimental generic code and convert it to concreate types via monophorphization so that you can play with and experiment with the feature.  This tool has also been exposed at [go2goplay.golang.org](https://go2goplay.golang.org) making it really easy to play around with the new syntax.
 
 So I starting thinking of ways generics could be used mostly based off of what is found in other langages and I implemented a few of them here.  Please note that these are probably **horrible ideas** and probably shouldn't be taken as what *should* be done.
 
 ## Rust-style `Result` object
-With Go you can return multiple values from a function and errors must be passed between functions as one of those values (typically the last one) as there are no exceptions that bubble up behind the scenes.   
+With Go you can return multiple values from a function and errors must be passed between functions as one of those values (typically the last one) as there are no exceptions that bubble up behind the scenes.
 
 ```go
 func doThing(fail bool) (int, error) {
@@ -31,7 +31,7 @@ func main() {
 }
 ```
 
-Rust is similar in making errors explit return values, however instead of returning multiple errors an [`enum`](https://doc.rust-lang.org/rust-by-example/custom_types/enum.html) called [`Result`](https://doc.rust-lang.org/std/result/index.html) with generic type parameters is passed back with a value of either a `Ok` value or and `Err` value (never both!). Both `Ok` and `Err` can have any type. 
+Rust is similar in making errors explit return values, however instead of returning multiple errors an [`enum`](https://doc.rust-lang.org/rust-by-example/custom_types/enum.html) called [`Result`](https://doc.rust-lang.org/std/result/index.html) with generic type parameters is passed back with a value of either a `Ok` value or and `Err` value (never both!). Both `Ok` and `Err` can have any type.
 
 ```rust
 // Define both the Ok type and the Err type.  For simplicty i am returning a
@@ -62,8 +62,8 @@ type Result(type T) struct {
 // Ok will create a new result with a value of any type and no error.
 func Ok(type T)(value T) Result(T) {
 	return Result(T){ Value: value }
-}	
-    
+}
+
 // Err will create a new result with only an error
 func Err(type T)(err error) Result(T) {
 	return Result(T){ Err: err }
@@ -87,12 +87,12 @@ func (r Result(T)) Unwrap() T {
 
 // IsOk returns true if there is no error
 func (r Result(T)) IsOk() bool {
-	return r.Err == nil 
+	return r.Err == nil
 }
 
 // IsErr returns true if there is an error
 func (r Result(T)) IsErr() bool {
-	return r.Err != nil 
+	return r.Err != nil
 }
 
 // ErrIs is a wrapper for errors.Is
@@ -109,7 +109,7 @@ var ErrBadValue = errors.New("bad value")
 
 func myFunc(input string) Result(int) {
 	if input == "bad" {
-        // note we have to explitly state the return type here as Go cannot 
+        // note we have to explitly state the return type here as Go cannot
         // (yet) infer the type from the return type.
 		return Err(int)(ErrBadValue)
 	}
@@ -122,25 +122,25 @@ func main() {
     // panic if there is an error
 	fmt.Println(myFunc("good").Expect("value is bad"))
 //	fmt.Println(myFunc("bad").Expect("value is bad"))
-	
+
 	res := myFunc("wut")
     // replacement for if err != nil
     if res.IsErr() {
 		panic("we had any error")
 	}
-	
+
 	res = myFunc("hmm")
 	if res.ErrIs(ErrBadValue) {
-		panic("we got a bad value")		
+		panic("we got a bad value")
 	}
-	
+
 	res = myFunc("bad")
     // ignore the error
     fmt.Println(res.Unwrap())
 }
 ```
 
-So with generic Go we can create a `Result` like object, but besides having a way to panic on error with  `Expect` we actually don't gain much as there still ins't a way to easily return an Result error back up to the higher called in the stack (like `?` in Rust).  
+So with generic Go we can create a `Result` like object, but besides having a way to panic on error with  `Expect` we actually don't gain much as there still ins't a way to easily return an Result error back up to the higher called in the stack (like `?` in Rust).
 
 So this probably isn't the best idea, but it is possible.
 
@@ -163,7 +163,7 @@ type Foo struct {
 func doThingFoo(foo Foo) {
     if foo.quuz == nil {
         fmt.Println("value not set")
-        return 
+        return
     }
     // Note we have to deference the value back to an int here for functions
     // that expect int and not *int. Also will panic if we forgot to nill check
@@ -184,7 +184,7 @@ func Bar struct {
 func doThingBar(bar Bar) {
     if !foo.quux.Valid {
         fmt.Println("value not set")
-        return 
+        return
     }
     // Here we can get the Value directly from the struct.  We have no chance
     // of panicing here as even with quux being invalid this will still be the
@@ -237,7 +237,7 @@ func FromPtr(type T)(ptr *T) Optional(T) {
 // Valid returns if the there is an optional.
 func (o *Optional(T)) Valid() bool { return o.valid }
 
-// Get will return the value and and bool if it is valid or not.  This is 
+// Get will return the value and and bool if it is valid or not.  This is
 // similar to getting a value from a map.
 func (o *Optional(T)) Get() (T, bool) {
 	return o.value, o.valid
@@ -282,35 +282,35 @@ func main() {
 	if v, ok := a.Get(); ok {
 		fmt.Printf("a is valid and set to: %v\n", v)
 	}
-	
+
 	// Create empty optional
 	b := Empty(string)()
 	// print if b is valid if not return "<unknown>"
 	fmt.Println("b value:", b.OrElse("<unknown>"))
-	
+
 
 	// function call needed as you cannot take the address of a literal
-	c := FromPtr(Ptr(42)) 
+	c := FromPtr(Ptr(42))
 	fmt.Println("c valid:", c.Valid())
 	cv, _ := c.Get()
-	fmt.Println("c value:", cv) // value already derefed	
-	
+	fmt.Println("c value:", cv) // value already derefed
+
 	// Create nil *int
 	var nilInt *int
 	d := FromPtr(nilInt)
 	fmt.Println("d valid:", d.Valid())
 	dv, _ := d.Get()
-	fmt.Println("d value:", dv) // value already derefed	
+	fmt.Println("d value:", dv) // value already derefed
 }
 ```
 
-Unlike `Result` type playing around with an Optional wrapper seems like it could be useful in a post-generic world.  I am sure there is other functionality that could be added to a wrapper as well. 
+Unlike `Result` type playing around with an Optional wrapper seems like it could be useful in a post-generic world.  I am sure there is other functionality that could be added to a wrapper as well.
 
 [Play with this in the go2go playground](https://go2goplay.golang.org/p/P8REnlsuld4)
 
 
 ## Summary
-I did this examples as a though expirement with "what could be done with generics" and not so much "what *should* be done".  There are a couple take aways I had with this.  
+I did this examples as a though expirement with "what could be done with generics" and not so much "what *should* be done".  There are a couple take aways I had with this.
 
 
 1. Working with generics is pretty straight forward and easy.  Writing seemed to be easy even with the extra params, however, reading may hurt a bit.
